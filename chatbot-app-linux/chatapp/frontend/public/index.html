@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Question Answering App</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <h1>AI Question Answering App</h1>
+      <p>Ask a question and get an AI-generated response.</p>
+    </header>
+
+    <main>
+      <section id="chat-window" class="chat-window"></section>
+
+      <form id="chat-form" class="chat-form">
+        <textarea
+          id="question"
+          name="question"
+          rows="4"
+          placeholder="Type your question here..."
+          required
+        ></textarea>
+        <div class="actions">
+          <button type="submit">Send</button>
+          <button type="button" id="new-chat">New Chat</button>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <script src="/config.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
