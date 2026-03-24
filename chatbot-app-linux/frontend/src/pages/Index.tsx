@@ -4,6 +4,19 @@ import ChatInput from "@/components/ChatInput";
 import ThinkingIndicator from "@/components/ThinkingIndicator";
 import EmptyState from "@/components/EmptyState";
 import { Sparkles } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+function generateUUID(): string {
+  if (window.crypto && window.crypto.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 interface Message {
   id: string;
@@ -14,6 +27,7 @@ interface Message {
 const API_BASE_URL = (window as any).APP_CONFIG?.API_BASE_URL ?? "";
 
 const Index = () => {
+  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -30,19 +44,24 @@ const Index = () => {
   }, [messages, isThinking, scrollToBottom]);
 
   const handleSend = async (question: string) => {
-    const userMsg: Message = { id: crypto.randomUUID(), role: "user", text: question };
+    const userMsg: Message = { id: generateUUID(), role: "user", text: question };
     setMessages((prev) => [...prev, userMsg]);
     setIsThinking(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, conversation_id: conversationId }),
-      });
+      let response: Response;
+      try {
+        response = await fetch(`${API_BASE_URL}/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question, conversation_id: conversationId }),
+        });
+      } catch (networkError) {
+        throw new Error("Unable to connect to the backend. Please check that the API server is running and reachable.");
+      }
 
       if (!response.ok) {
-        let detail = "Request failed";
+        let detail = `Server returned ${response.status} ${response.statusText}`;
         try {
           const errorData = await response.json();
           detail = errorData.detail || detail;
@@ -54,12 +73,17 @@ const Index = () => {
       setConversationId(data.conversation_id);
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: "assistant", text: data.answer },
+        { id: generateUUID(), role: "assistant", text: data.answer },
       ]);
     } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Connection Error",
+        description: error.message,
+      });
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: "assistant", text: `Error: ${error.message}` },
+        { id: generateUUID(), role: "assistant", text: `⚠️ ${error.message}` },
       ]);
     } finally {
       setIsThinking(false);
