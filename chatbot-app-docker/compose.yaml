@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: chatbot-postgres
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - chatbot-net
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: chatbot-backend
+    env_file:
+      - ./backend/.env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: appdb
+      DB_USER: appuser
+      DB_PASSWORD: apppassword
+    depends_on:
+      - postgres
+    networks:
+      - chatbot-net
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: chatbot-frontend
+    depends_on:
+      - backend
+    networks:
+      - chatbot-net
+    ports:
+      - "3000:80"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: chatbot-prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - backend
+    networks:
+      - chatbot-net
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: chatbot-grafana
+    depends_on:
+      - prometheus
+    networks:
+      - chatbot-net
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  postgres_data: {}
+  grafana_data: {}
+
+networks:
+  chatbot-net: {}
