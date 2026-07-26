@@ -85,6 +85,7 @@ psycopg2-binary
 python-dotenv
 openai==1.30.0
 httpx==0.27.0
+prometheus-client
 ```
 
 Install dependencies:
